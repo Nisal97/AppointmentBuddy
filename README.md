@@ -30,7 +30,7 @@ Appointment Buddy is a lightweight, real-time appointment and queue management s
 
 1.  **Clone the repository:**
     ```bash
-    git clone [https://github.com/yourusername/appointment-buddy.git](https://github.com/yourusername/appointment-buddy.git)
+    git clone [https://github.com/nisal97/appointment-buddy.git](https://github.com/nisal97/appointment-buddy.git)
     cd appointment-buddy
     ```
 
