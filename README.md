@@ -1,36 +1,58 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# 📅 Appointment Buddy
 
-## Getting Started
+Appointment Buddy is a lightweight, real-time appointment and queue management system tailored for local service providers like barbershops, salons, and private family doctors. Built as a Progressive Web App (PWA), it delivers a seamless, native-like experience across desktop reception terminals and mobile devices.
 
-First, run the development server:
+## ✨ Core Features
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+*   **Cross-Device PWA:** Installable directly from the browser to PC or mobile devices with persistent login sessions.
+*   **Real-Time Queue Tracking:** Instantly move appointments through status stages (Upcoming ➔ Ongoing ➔ Completed) with real-time UI updates across all logged-in devices.
+*   **Smart Entry Generation:** Customizable service menus with predefined time estimates and pricing to automatically calculate appointment blocks.
+*   **Automated Reminders:** Scheduled WhatsApp notifications sent to customers exactly 10 minutes before their appointment time.
+*   **Advanced Filtering & Search:** Easily locate past or upcoming records by date, time, customer name, phone number, or service type.
+*   **Staff & Profile Management:** Secure credential management, password recovery, and multi-staff assignment capabilities.
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 🛠️ Tech Stack
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+*   **Frontend:** [Next.js](https://nextjs.org/) (React) configured as a Progressive Web App (PWA)
+*   **Backend & Auth:** [Supabase](https://supabase.com/) (PostgreSQL, Real-time Subscriptions, Authentication)
+*   **State Management:** [Zustand](https://github.com/pmndrs/zustand)
+*   **Notifications:** Node.js Cron Jobs + Meta WhatsApp API (or local SMS gateway)
+*   **Styling:** Tailwind CSS
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 🚀 Getting Started
 
-## Learn More
+### Prerequisites
+*   Node.js (v18 or higher)
+*   npm or yarn
+*   A Supabase account and project
 
-To learn more about Next.js, take a look at the following resources:
+### Installation
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1.  **Clone the repository:**
+    ```bash
+    git clone [https://github.com/yourusername/appointment-buddy.git](https://github.com/yourusername/appointment-buddy.git)
+    cd appointment-buddy
+    ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2.  **Install dependencies:**
+    ```bash
+    npm install
+    ```
 
-## Deploy on Vercel
+3.  **Environment Variables:**
+    Create a `.env.local` file in the root directory and add your Supabase credentials:
+    ```env
+    NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+    NEXT_PUBLIC_SUPABASE_ANON_KEY=your_supabase_anon_key
+    ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4.  **Run the development server:**
+    ```bash
+    npm run dev
+    ```
+    Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+## 🗄️ Database Schema (Upcoming)
+*   `profiles`: Barber/Doctor details and settings.
+*   `services`: Available services, estimated times, and prices.
+*   `appointments`: Customer details, linked service, assigned staff, scheduled time, and current status.
