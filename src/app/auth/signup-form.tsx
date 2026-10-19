@@ -20,7 +20,7 @@ export function SignupForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center px-4 py-12 bg-gradient-to-br from-indigo-50 via-purple-50 to-blue-50 dark:from-zinc-950 dark:via-zinc-900 dark:to-zinc-900">
+    <div className="flex flex-1 flex-col items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
         <div className="mb-8 text-center">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white mb-4 shadow-lg shadow-indigo-500/25">

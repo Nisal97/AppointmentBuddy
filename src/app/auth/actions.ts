@@ -50,8 +50,8 @@ export async function login(
     }
   }
 
-  revalidatePath("/", "layout");
-  redirect("/");
+  revalidatePath("/home", "layout");
+  redirect("/home");
 }
 
 export async function signup(
@@ -127,6 +127,13 @@ export async function signup(
     };
   }
 
+  revalidatePath("/home", "layout");
+  redirect("/home");
+}
+
+export async function logout(): Promise<void> {
+  const supabase = await createClient();
+  await supabase.auth.signOut();
   revalidatePath("/", "layout");
   redirect("/");
 }

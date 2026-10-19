@@ -1,8 +1,8 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
 
-const PROTECTED_ROUTES = ["/dashboard"];
-const AUTH_ROUTES = ["/login", "/signup"];
+const PROTECTED_ROUTES = ["/dashboard", "/home", "/profile", "/shop", "/appointments"];
+const AUTH_ROUTES = ["/", "/login", "/signup"];
 
 function matchesRoute(pathname: string, routes: string[]) {
   return routes.some(
@@ -62,7 +62,7 @@ export async function updateSession(request: NextRequest) {
   }
 
   if (isAuthenticated && matchesRoute(pathname, AUTH_ROUTES)) {
-    return redirectTo("/");
+    return redirectTo("/home");
   }
 
   return response;
