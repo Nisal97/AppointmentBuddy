@@ -36,6 +36,7 @@ export function DeleteSection({
           )}
           <div className="flex gap-2">
             <button
+              id="editAppointmentKeepButton"
               type="button"
               disabled={busy}
               onClick={onCancelDelete}
@@ -44,6 +45,7 @@ export function DeleteSection({
               Keep
             </button>
             <button
+              id="editAppointmentDeleteConfirmButton"
               type="submit"
               disabled={busy}
               className="flex-1 rounded-xl bg-red-600 px-4 py-2.5 text-sm font-semibold text-white shadow-md shadow-red-500/25 transition-all hover:bg-red-700 disabled:opacity-70 active:scale-[0.98]"
@@ -54,6 +56,7 @@ export function DeleteSection({
         </form>
       ) : (
         <button
+          id="editAppointmentDeleteButton"
           type="button"
           disabled={busy}
           onClick={onConfirmDelete}

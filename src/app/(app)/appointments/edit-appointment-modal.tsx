@@ -9,8 +9,15 @@ import {
   type AppointmentServiceOption,
   type MutationState,
 } from "./actions";
+import {
+  normalizeGender,
+  serviceCost,
+  serviceDurationMinutes,
+  type AppointmentGender,
+} from "./gender";
 import { DeleteSection } from "./edit-appointment-delete";
 import { EditFields } from "./edit-appointment-fields";
+import { ReadOnlyDetails } from "./edit-appointment-readonly";
 
 type EditAppointmentModalProps = {
   appointment: AppointmentCardData;
@@ -29,6 +36,9 @@ export function EditAppointmentModal({
     appointment.services.map((s) => s.id),
   );
   const [confirmingDelete, setConfirmingDelete] = useState(false);
+  const [gender, setGender] = useState<AppointmentGender>(
+    normalizeGender(appointment.gender),
+  );
   const [updateState, updateAction, isUpdating] = useActionState<
     MutationState,
     FormData
@@ -59,8 +69,19 @@ export function EditAppointmentModal({
     () =>
       services
         .filter((service) => selectedIds.includes(service.id))
-        .reduce((sum, service) => sum + service.duration_minutes, 0),
-    [services, selectedIds],
+        .reduce(
+          (sum, service) => sum + serviceDurationMinutes(service, gender),
+          0,
+        ),
+    [services, selectedIds, gender],
+  );
+
+  const totalPrice = useMemo(
+    () =>
+      services
+        .filter((service) => selectedIds.includes(service.id))
+        .reduce((sum, service) => sum + serviceCost(service, gender), 0),
+    [services, selectedIds, gender],
   );
 
   const toggleService = (id: string) => {
@@ -81,12 +102,13 @@ export function EditAppointmentModal({
   };
 
   const busy = isUpdating || isDeleting;
+  const isCompleted = appointment.status === "completed";
 
   return (
     <div
       role="dialog"
       aria-modal="true"
-      aria-label="Edit appointment"
+      aria-label={isCompleted ? "Appointment details" : "Edit appointment"}
       className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 p-0 backdrop-blur-sm sm:items-center sm:p-4"
       onClick={onClose}
     >
@@ -96,7 +118,7 @@ export function EditAppointmentModal({
       >
         <div className="mb-5 flex items-center justify-between">
           <h2 className="text-lg font-bold text-zinc-900 dark:text-white">
-            Edit appointment
+            {isCompleted ? "Appointment details" : "Edit appointment"}
           </h2>
           <button
             type="button"
@@ -113,7 +135,11 @@ export function EditAppointmentModal({
           assignees={assignees}
           selectedIds={selectedIds}
           totalDuration={totalDuration}
+          totalPrice={totalPrice}
+          gender={gender}
+          onGenderChange={setGender}
           busy={busy}
+          isCompleted={isCompleted}
           isUpdating={isUpdating}
           isDeleting={isDeleting}
           confirmingDelete={confirmingDelete}
@@ -136,7 +162,11 @@ function ModalBody({
   assignees,
   selectedIds,
   totalDuration,
+  totalPrice,
+  gender,
+  onGenderChange,
   busy,
+  isCompleted,
   isUpdating,
   isDeleting,
   confirmingDelete,
@@ -153,7 +183,11 @@ function ModalBody({
   assignees: AppointmentAssigneeOption[];
   selectedIds: string[];
   totalDuration: number;
+  totalPrice: number;
+  gender: AppointmentGender;
+  onGenderChange: (gender: AppointmentGender) => void;
   busy: boolean;
+  isCompleted: boolean;
   isUpdating: boolean;
   isDeleting: boolean;
   confirmingDelete: boolean;
@@ -167,32 +201,40 @@ function ModalBody({
 }) {
   return (
     <>
-      <form action={onSubmitUpdate} noValidate className="space-y-4">
-        <EditFields
-          appointment={appointment}
-          services={services}
-          assignees={assignees}
-          selectedIds={selectedIds}
-          totalDuration={totalDuration}
-          busy={busy}
-          onToggle={onToggle}
-        />
-        {updateError && (
-          <p
-            role="alert"
-            className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+      {isCompleted ? (
+        <ReadOnlyDetails appointment={appointment} />
+      ) : (
+        <form action={onSubmitUpdate} noValidate className="space-y-4">
+          <EditFields
+            appointment={appointment}
+            services={services}
+            assignees={assignees}
+            selectedIds={selectedIds}
+            totalDuration={totalDuration}
+            totalPrice={totalPrice}
+            gender={gender}
+            onGenderChange={onGenderChange}
+            busy={busy}
+            onToggle={onToggle}
+          />
+          {updateError && (
+            <p
+              role="alert"
+              className="rounded-lg border border-red-100 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-300"
+            >
+              {updateError}
+            </p>
+          )}
+          <button
+            id="editAppointmentSaveButton"
+            type="submit"
+            disabled={busy}
+            className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:from-indigo-700 hover:to-purple-700 disabled:opacity-70 active:scale-[0.98]"
           >
-            {updateError}
-          </p>
-        )}
-        <button
-          type="submit"
-          disabled={busy}
-          className="w-full rounded-xl bg-gradient-to-r from-indigo-600 to-purple-600 px-4 py-3 text-sm font-semibold text-white shadow-lg shadow-indigo-500/25 transition-all hover:from-indigo-700 hover:to-purple-700 disabled:opacity-70 active:scale-[0.98]"
-        >
-          {isUpdating ? "Saving…" : "Save changes"}
-        </button>
-      </form>
+            {isUpdating ? "Saving…" : "Save changes"}
+          </button>
+        </form>
+      )}
       <DeleteSection
         busy={busy}
         isDeleting={isDeleting}

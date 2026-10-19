@@ -12,12 +12,15 @@ type ServiceCardProps = {
 };
 
 export function ServiceCard({ service, isPending, onUpdate, onRemove }: ServiceCardProps) {
+  const sid = `service-${service.id}-`;
+
   return (
     <div className={card}>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <div>
-          <label className={labelClass}>Name</label>
+          <label id={`${sid}nameLabel`} htmlFor={`${sid}nameInput`} className={labelClass}>Name</label>
           <input
+            id={`${sid}nameInput`}
             type="text"
             value={service.name}
             disabled={isPending}
@@ -28,6 +31,7 @@ export function ServiceCard({ service, isPending, onUpdate, onRemove }: ServiceC
         </div>
         <div className="flex items-end">
           <button
+            id={`${sid}deleteButton`}
             type="button"
             disabled={isPending}
             onClick={() => onRemove(service.id)}
@@ -43,6 +47,7 @@ export function ServiceCard({ service, isPending, onUpdate, onRemove }: ServiceC
           Gender-Specific
         </span>
         <Toggle
+          id={`${sid}genderSpecificToggle`}
           checked={service.gender_specific}
           disabled={isPending}
           label="Gender-Specific"
@@ -64,8 +69,9 @@ export function ServiceCard({ service, isPending, onUpdate, onRemove }: ServiceC
       {!service.gender_specific ? (
         <div className="mt-3 grid gap-3 sm:grid-cols-2">
           <div>
-            <label className={labelClass}>Duration (minutes)</label>
+            <label id={`${sid}durationLabel`} htmlFor={`${sid}durationInput`} className={labelClass}>Duration (minutes)</label>
             <input
+              id={`${sid}durationInput`}
               type="number"
               min={0}
               value={service.duration_minutes}
@@ -77,8 +83,9 @@ export function ServiceCard({ service, isPending, onUpdate, onRemove }: ServiceC
             />
           </div>
           <div>
-            <label className={labelClass}>Cost</label>
+            <label id={`${sid}costLabel`} htmlFor={`${sid}costInput`} className={labelClass}>Cost</label>
             <input
+              id={`${sid}costInput`}
               type="number"
               min={0}
               step="0.01"
@@ -92,6 +99,7 @@ export function ServiceCard({ service, isPending, onUpdate, onRemove }: ServiceC
       ) : (
         <div className="mt-3 space-y-3">
           <GenderPricing
+            idPrefix={`${sid}male-`}
             tone="male"
             duration={service.male_duration_minutes}
             cost={service.male_cost}
@@ -102,6 +110,7 @@ export function ServiceCard({ service, isPending, onUpdate, onRemove }: ServiceC
             onCost={(value) => onUpdate(service.id, { male_cost: value })}
           />
           <GenderPricing
+            idPrefix={`${sid}female-`}
             tone="female"
             duration={service.female_duration_minutes}
             cost={service.female_cost}

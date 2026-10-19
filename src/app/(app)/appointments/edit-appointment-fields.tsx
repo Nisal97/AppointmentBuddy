@@ -3,6 +3,13 @@ import type {
   AppointmentCardData,
   AppointmentServiceOption,
 } from "./actions";
+import {
+  formatMoney,
+  serviceCost,
+  serviceDurationMinutes,
+  type AppointmentGender,
+} from "./gender";
+import { GenderToggle } from "./gender-toggle";
 
 const inputBase =
   "block w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-400/30";
@@ -16,6 +23,9 @@ export type ModalBodyShared = {
   assignees: AppointmentAssigneeOption[];
   selectedIds: string[];
   totalDuration: number;
+  totalPrice: number;
+  gender: AppointmentGender;
+  onGenderChange: (gender: AppointmentGender) => void;
   busy: boolean;
   onToggle: (id: string) => void;
 };
@@ -26,6 +36,9 @@ export function EditFields({
   assignees,
   selectedIds,
   totalDuration,
+  totalPrice,
+  gender,
+  onGenderChange,
   busy,
   onToggle,
 }: ModalBodyShared) {
@@ -33,7 +46,7 @@ export function EditFields({
     <>
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="edit-customerName" className={labelClass}>
+          <label id="edit-customerNameLabel" htmlFor="edit-customerName" className={labelClass}>
             Customer name
           </label>
           <input
@@ -46,7 +59,7 @@ export function EditFields({
           />
         </div>
         <div>
-          <label htmlFor="edit-contactNumber" className={labelClass}>
+          <label id="edit-contactNumberLabel" htmlFor="edit-contactNumber" className={labelClass}>
             Contact number <span className="text-red-500">*</span>
           </label>
           <input
@@ -61,9 +74,15 @@ export function EditFields({
           />
         </div>
       </div>
+      <GenderToggle
+        id="editAppointmentGenderToggle"
+        gender={gender}
+        isPending={busy}
+        onGenderChange={onGenderChange}
+      />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
-          <label htmlFor="edit-appointmentDate" className={labelClass}>
+          <label id="edit-appointmentDateLabel" htmlFor="edit-appointmentDate" className={labelClass}>
             Date <span className="text-red-500">*</span>
           </label>
           <input
@@ -77,7 +96,7 @@ export function EditFields({
           />
         </div>
         <div>
-          <label htmlFor="edit-appointmentTime" className={labelClass}>
+          <label id="edit-appointmentTimeLabel" htmlFor="edit-appointmentTime" className={labelClass}>
             Time <span className="text-red-500">*</span>
           </label>
           <input
@@ -101,6 +120,7 @@ export function EditFields({
             const checked = selectedIds.includes(service.id);
             return (
               <label
+                id={`edit-service-label-${service.id}`}
                 key={service.id}
                 className={`flex cursor-pointer items-center gap-3 rounded-xl border px-3 py-2.5 text-sm transition-all ${
                   checked
@@ -119,7 +139,8 @@ export function EditFields({
                   {service.name}
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {service.duration_minutes} min
+                  {serviceDurationMinutes(service, gender)} min ·{" "}
+                  {formatMoney(serviceCost(service, gender))}
                 </span>
               </label>
             );
@@ -127,10 +148,10 @@ export function EditFields({
         </div>
       </fieldset>
       <p className="text-right text-sm font-semibold text-indigo-700 dark:text-indigo-300">
-        Total: {totalDuration} min
+        Total: {totalDuration} min · {formatMoney(totalPrice)}
       </p>
       <div>
-        <label htmlFor="edit-assigneeId" className={labelClass}>
+        <label id="edit-assigneeIdLabel" htmlFor="edit-assigneeId" className={labelClass}>
           Assignee
         </label>
         <select

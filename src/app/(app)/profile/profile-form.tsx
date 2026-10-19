@@ -36,13 +36,14 @@ export function ProfileForm({ initialShopName, initialEmail }: ProfileFormProps)
       <form action={formAction} className="space-y-5" noValidate>
         <div>
           <label
-            htmlFor="shopName"
+            id="profileShopNameLabel"
+            htmlFor="profileShopNameInput"
             className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
             Shop Name
           </label>
           <input
-            id="shopName"
+            id="profileShopNameInput"
             name="shopName"
             type="text"
             defaultValue={initialShopName}
@@ -54,13 +55,14 @@ export function ProfileForm({ initialShopName, initialEmail }: ProfileFormProps)
 
         <div>
           <label
-            htmlFor="email"
+            id="profileEmailLabel"
+            htmlFor="profileEmailInput"
             className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
             Email address
           </label>
           <input
-            id="email"
+            id="profileEmailInput"
             name="email"
             type="email"
             autoComplete="email"
@@ -73,13 +75,14 @@ export function ProfileForm({ initialShopName, initialEmail }: ProfileFormProps)
 
         <div>
           <label
-            htmlFor="newPassword"
+            id="profileNewPasswordLabel"
+            htmlFor="profileNewPasswordInput"
             className="block text-sm font-medium text-zinc-700 dark:text-zinc-300"
           >
             New Password
           </label>
           <input
-            id="newPassword"
+            id="profileNewPasswordInput"
             name="newPassword"
             type="password"
             autoComplete="new-password"
@@ -107,7 +110,12 @@ export function ProfileForm({ initialShopName, initialEmail }: ProfileFormProps)
           </p>
         )}
 
-        <button type="submit" disabled={isPending} className={buttonBase}>
+        <button
+          id="profileSaveButton"
+          type="submit"
+          disabled={isPending}
+          className={buttonBase}
+        >
           {isPending ? "Saving…" : "Save"}
         </button>
       </form>

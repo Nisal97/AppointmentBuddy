@@ -24,7 +24,9 @@ async function NewAppointmentContent() {
   const { data: services } = user
     ? await supabase
         .from("services")
-        .select("id, name, duration_minutes, cost")
+        .select(
+          "id, name, duration_minutes, cost, gender_specific, male_duration_minutes, male_cost, female_duration_minutes, female_cost",
+        )
         .eq("shop_id", user.id)
         .order("created_at", { ascending: true })
     : { data: null };

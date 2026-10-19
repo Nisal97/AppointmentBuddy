@@ -6,27 +6,8 @@ import {
   type AppointmentCardData,
   type MutationState,
 } from "./actions";
-
-function formatDate(isoDate: string): string {
-  const [y, m, d] = isoDate.split("-").map(Number);
-  if (!y || !m || !d) return isoDate;
-  return new Date(y, m - 1, d).toLocaleDateString(undefined, {
-    weekday: "short",
-    day: "numeric",
-    month: "short",
-    year: "numeric",
-  });
-}
-
-function formatTime(hhmm: string): string {
-  const [h, m] = hhmm.split(":").map(Number);
-  if (h === undefined || m === undefined || Number.isNaN(h) || Number.isNaN(m)) {
-    return hhmm;
-  }
-  const period = h >= 12 ? "PM" : "AM";
-  const hour12 = h % 12 === 0 ? 12 : h % 12;
-  return `${hour12}:${String(m).padStart(2, "0")} ${period}`;
-}
+import { formatDate, formatTime } from "./format";
+import { formatMoney } from "./gender";
 
 type AppointmentCardProps = {
   appointment: AppointmentCardData;
@@ -39,6 +20,7 @@ export function AppointmentCard({ appointment, onEdit }: AppointmentCardProps) {
     FormData
   >(completeAppointment, {});
   const isUpcoming = appointment.status === "upcoming";
+  const isCompleted = appointment.status === "completed";
 
   return (
     <article
@@ -51,7 +33,9 @@ export function AppointmentCard({ appointment, onEdit }: AppointmentCardProps) {
       }}
       tabIndex={0}
       role="button"
-      aria-label={`Edit appointment for ${appointment.customer_name || appointment.contact_number}`}
+      aria-label={`${
+        isCompleted ? "View details for" : "Edit appointment for"
+      } ${appointment.customer_name || appointment.contact_number}`}
       className="cursor-pointer rounded-2xl border border-zinc-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md dark:border-zinc-800 dark:bg-zinc-900"
     >
       <div className="flex items-start justify-between gap-3">
@@ -71,6 +55,7 @@ export function AppointmentCard({ appointment, onEdit }: AppointmentCardProps) {
           >
             <input type="hidden" name="appointmentId" value={appointment.id} />
             <button
+              id={`appointment-${appointment.id}-doneButton`}
               type="submit"
               disabled={isPending}
               className="shrink-0 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 px-4 py-2 text-sm font-semibold text-white shadow-md shadow-emerald-500/25 transition-all hover:from-emerald-700 hover:to-teal-700 disabled:opacity-70 active:scale-[0.98]"
@@ -111,9 +96,21 @@ export function AppointmentCard({ appointment, onEdit }: AppointmentCardProps) {
           </dd>
         </div>
         <div>
+          <dt className="text-xs text-zinc-500 dark:text-zinc-400">Price</dt>
+          <dd className="font-medium text-zinc-900 dark:text-zinc-100">
+            {formatMoney(appointment.total_cost)}
+          </dd>
+        </div>
+        <div>
           <dt className="text-xs text-zinc-500 dark:text-zinc-400">Assignee</dt>
           <dd className="font-medium text-zinc-900 dark:text-zinc-100">
             {appointment.assignee_name ?? "No preference"}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-xs text-zinc-500 dark:text-zinc-400">Gender</dt>
+          <dd className="font-medium text-zinc-900 dark:text-zinc-100">
+            {appointment.gender === "female" ? "Female" : "Male"}
           </dd>
         </div>
       </dl>

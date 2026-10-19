@@ -4,6 +4,7 @@ import { inputBase, labelClass } from "./ui";
 
 type GenderPricingProps = {
   tone: "male" | "female";
+  idPrefix: string;
   duration: number | null;
   cost: number | null;
   isPending: boolean;
@@ -13,6 +14,7 @@ type GenderPricingProps = {
 
 export function GenderPricing({
   tone,
+  idPrefix,
   duration,
   cost,
   isPending,
@@ -39,8 +41,10 @@ export function GenderPricing({
       </p>
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
-          <label className={labelClass}>Duration (minutes)</label>
+          <label id={`${idPrefix}durationLabel`} className={labelClass}>
+            Duration (minutes)</label>
           <input
+            id={`${idPrefix}durationInput`}
             type="number"
             min={0}
             value={duration ?? ""}
@@ -50,8 +54,10 @@ export function GenderPricing({
           />
         </div>
         <div>
-          <label className={labelClass}>Cost</label>
+          <label id={`${idPrefix}costLabel`} className={labelClass}>
+            Cost</label>
           <input
+            id={`${idPrefix}costInput`}
             type="number"
             min={0}
             step="0.01"

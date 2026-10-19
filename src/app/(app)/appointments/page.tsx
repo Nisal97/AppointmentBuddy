@@ -8,6 +8,7 @@ import type {
   AppointmentServiceOption,
 } from "./actions";
 import { AppointmentList, type AppointmentTab } from "./appointment-list";
+import { normalizeGender } from "./gender";
 
 export const metadata: Metadata = {
   title: "Appointments | Appointment Buddy",
@@ -22,6 +23,8 @@ type RawAppointment = {
   total_duration_minutes: number | null;
   assignee_id: string | null;
   status: string;
+  gender: string;
+  total_cost: number | null;
   assignees: { name: string } | { name: string }[] | null;
   appointment_services: { services: { id: string; name: string; duration_minutes: number } | null }[];
 };
@@ -64,7 +67,7 @@ async function AppointmentsContent({
   const { data: rows, count: activeCount } = await supabase
     .from("appointments")
     .select(
-      "id, customer_name, contact_number, appointment_date, appointment_time, total_duration_minutes, assignee_id, status, assignees(name), appointment_services(services(id, name, duration_minutes))",
+      "id, customer_name, contact_number, appointment_date, appointment_time, total_duration_minutes, assignee_id, status, gender, total_cost, assignees(name), appointment_services(services(id, name, duration_minutes))",
       { count: "exact" },
     )
     .eq("shop_id", user.id)
@@ -80,7 +83,9 @@ async function AppointmentsContent({
 
   const { data: services } = await supabase
     .from("services")
-    .select("id, name, duration_minutes, cost")
+    .select(
+      "id, name, duration_minutes, cost, gender_specific, male_duration_minutes, male_cost, female_duration_minutes, female_cost",
+    )
     .eq("shop_id", user.id)
     .order("created_at", { ascending: true });
 
@@ -101,6 +106,8 @@ async function AppointmentsContent({
       assignee_id: row.assignee_id,
       assignee_name: assigneeName(row.assignees),
       status: row.status,
+      gender: normalizeGender(row.gender),
+      total_cost: Number(row.total_cost ?? 0),
       services: row.appointment_services
         .map((link) => link.services)
         .filter((s): s is { id: string; name: string; duration_minutes: number } => Boolean(s)),

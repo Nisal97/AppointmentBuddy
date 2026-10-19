@@ -39,11 +39,11 @@ export function SignupForm() {
         <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
           <form action={formAction} className="space-y-5" noValidate>
             <div>
-              <label htmlFor="shopName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="signupShopNameInput" id="signupShopNameLabel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Shop Name
               </label>
               <input
-                id="shopName"
+                id="signupShopNameInput"
                 name="shopName"
                 type="text"
                 autoComplete="shop-name"
@@ -54,11 +54,11 @@ export function SignupForm() {
             </div>
 
             <div>
-              <label htmlFor="ownerName" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="signupOwnerNameInput" id="signupOwnerNameLabel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Shop Owner Name
               </label>
               <input
-                id="ownerName"
+                id="signupOwnerNameInput"
                 name="ownerName"
                 type="text"
                 autoComplete="name"
@@ -69,11 +69,11 @@ export function SignupForm() {
             </div>
 
             <div>
-              <label htmlFor="contactInfo" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="signupContactInfoInput" id="signupContactInfoLabel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Shop Contact Info
               </label>
               <input
-                id="contactInfo"
+                id="signupContactInfoInput"
                 name="contactInfo"
                 type="tel"
                 autoComplete="tel"
@@ -84,11 +84,11 @@ export function SignupForm() {
             </div>
 
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="signupEmailInput" id="signupEmailLabel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Email
               </label>
               <input
-                id="email"
+                id="signupEmailInput"
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -99,11 +99,11 @@ export function SignupForm() {
             </div>
 
             <div className="relative">
-              <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="signupPasswordInput" id="signupPasswordLabel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Password
               </label>
               <input
-                id="password"
+                id="signupPasswordInput"
                 name="password"
                 type={showPassword ? "text" : "password"}
                 autoComplete="new-password"
@@ -112,6 +112,7 @@ export function SignupForm() {
                 className={`${inputBase} pr-12`}
               />
               <button
+                id="signupShowPasswordButton"
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
                 disabled={isPending}
@@ -122,11 +123,11 @@ export function SignupForm() {
             </div>
 
             <div className="relative">
-              <label htmlFor="confirmPassword" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor="signupConfirmPasswordInput" id="signupConfirmPasswordLabel" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Retype Password
               </label>
               <input
-                id="confirmPassword"
+                id="signupConfirmPasswordInput"
                 name="confirmPassword"
                 type={showConfirmPassword ? "text" : "password"}
                 autoComplete="new-password"
@@ -135,6 +136,7 @@ export function SignupForm() {
                 className={`${inputBase} pr-12`}
               />
               <button
+                id="signupShowConfirmPasswordButton"
                 type="button"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                 disabled={isPending}
@@ -162,6 +164,7 @@ export function SignupForm() {
             )}
 
             <button
+              id="signupSubmitButton"
               type="submit"
               disabled={isPending}
               className={buttonBase}

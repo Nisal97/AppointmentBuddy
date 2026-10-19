@@ -7,6 +7,13 @@ import {
   type AppointmentServiceOption,
   type AppointmentState,
 } from "../actions";
+import {
+  formatMoney,
+  serviceCost,
+  serviceDurationMinutes,
+  type AppointmentGender,
+} from "../gender";
+import { GenderToggle } from "../gender-toggle";
 import { AssigneeSelect, ServiceCheckboxes } from "./appointment-fields";
 
 const inputBase =
@@ -33,6 +40,7 @@ type AppointmentFormProps = {
 
 export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [gender, setGender] = useState<AppointmentGender>("male");
   const [state, formAction, isPending] = useActionState<
     AppointmentState,
     FormData
@@ -42,8 +50,19 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
     () =>
       services
         .filter((service) => selectedIds.includes(service.id))
-        .reduce((sum, service) => sum + service.duration_minutes, 0),
-    [services, selectedIds],
+        .reduce(
+          (sum, service) => sum + serviceDurationMinutes(service, gender),
+          0,
+        ),
+    [services, selectedIds, gender],
+  );
+
+  const totalPrice = useMemo(
+    () =>
+      services
+        .filter((service) => selectedIds.includes(service.id))
+        .reduce((sum, service) => sum + serviceCost(service, gender), 0),
+    [services, selectedIds, gender],
   );
 
   const toggleService = (id: string) => {
@@ -61,7 +80,7 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
     <form action={submitWithPayload} noValidate className="space-y-5">
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="customerName" className={labelClass}>
+          <label id="newAppointmentCustomerNameLabel" htmlFor="customerName" className={labelClass}>
             Customer name{" "}
             <span className="text-zinc-400 dark:text-zinc-500">(optional)</span>
           </label>
@@ -76,7 +95,7 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
           />
         </div>
         <div>
-          <label htmlFor="contactNumber" className={labelClass}>
+          <label id="newAppointmentContactNumberLabel" htmlFor="contactNumber" className={labelClass}>
             Contact number <span className="text-red-500">*</span>
           </label>
           <input
@@ -92,9 +111,15 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
           />
         </div>
       </div>
+      <GenderToggle
+        id="newAppointmentGenderToggle"
+        gender={gender}
+        isPending={isPending}
+        onGenderChange={setGender}
+      />
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
-          <label htmlFor="appointmentDate" className={labelClass}>
+          <label id="newAppointmentDateLabel" htmlFor="appointmentDate" className={labelClass}>
             Date <span className="text-red-500">*</span>
           </label>
           <input
@@ -109,7 +134,7 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
           />
         </div>
         <div>
-          <label htmlFor="appointmentTime" className={labelClass}>
+          <label id="newAppointmentTimeLabel" htmlFor="appointmentTime" className={labelClass}>
             Time <span className="text-red-500">*</span>
           </label>
           <input
@@ -130,6 +155,7 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
         <ServiceCheckboxes
           services={services}
           selectedIds={selectedIds}
+          gender={gender}
           isPending={isPending}
           onToggle={toggleService}
         />
@@ -137,14 +163,24 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
       <div
         role="status"
         aria-live="polite"
-        className="flex items-center justify-between rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm dark:border-indigo-500/20 dark:bg-indigo-500/10"
+        className="space-y-1.5 rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm dark:border-indigo-500/20 dark:bg-indigo-500/10"
       >
-        <span className="font-medium text-zinc-600 dark:text-zinc-300">
-          Estimated total duration
-        </span>
-        <span className="text-base font-bold text-indigo-700 dark:text-indigo-300">
-          {totalDuration} min
-        </span>
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">
+            Estimated duration
+          </span>
+          <span className="text-base font-bold text-indigo-700 dark:text-indigo-300">
+            {totalDuration} min
+          </span>
+        </div>
+        <div className="flex items-center justify-between">
+          <span className="font-medium text-zinc-600 dark:text-zinc-300">
+            Estimated price
+          </span>
+          <span className="text-base font-bold text-indigo-700 dark:text-indigo-300">
+            {formatMoney(totalPrice)}
+          </span>
+        </div>
       </div>
       <AssigneeSelect assignees={assignees} isPending={isPending} />
       {state.error && (
@@ -155,7 +191,7 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
           {state.error}
         </p>
       )}
-      <button type="submit" disabled={isPending} className={saveButton}>
+      <button id="newAppointmentCreateButton" type="submit" disabled={isPending} className={saveButton}>
         {isPending ? "Creating…" : "Create appointment"}
       </button>
     </form>

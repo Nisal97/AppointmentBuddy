@@ -15,8 +15,10 @@ export function AssigneeCard({ assignee, isPending, onUpdate, onRemove }: Assign
     <div className={card}>
       <div className="grid gap-3 sm:grid-cols-[1fr_auto]">
         <div>
-          <label className={labelClass}>Name</label>
+          <label id={`assignee-${assignee.id}-nameLabel`} className={labelClass}>
+            Name</label>
           <input
+            id={`assignee-${assignee.id}-nameInput`}
             type="text"
             value={assignee.name}
             disabled={isPending}
@@ -27,6 +29,7 @@ export function AssigneeCard({ assignee, isPending, onUpdate, onRemove }: Assign
         </div>
         <div className="flex items-end">
           <button
+            id={`assignee-${assignee.id}-deleteButton`}
             type="button"
             disabled={isPending}
             onClick={() => onRemove(assignee.id)}
@@ -42,6 +45,7 @@ export function AssigneeCard({ assignee, isPending, onUpdate, onRemove }: Assign
           Available Today
         </span>
         <Toggle
+          id={`assignee-${assignee.id}-availableTodayToggle`}
           checked={assignee.available_today}
           disabled={isPending}
           label="Available Today"

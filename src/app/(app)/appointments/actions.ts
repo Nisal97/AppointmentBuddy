@@ -3,12 +3,17 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
+import {
+  normalizeGender,
+  serviceCost,
+  serviceDurationMinutes,
+  type AppointmentGender,
+  type GenderedService,
+} from "./gender";
 
-export type AppointmentServiceOption = {
+export type AppointmentServiceOption = GenderedService & {
   id: string;
   name: string;
-  duration_minutes: number;
-  cost: number;
 };
 
 export type AppointmentAssigneeOption = {
@@ -33,6 +38,8 @@ export type AppointmentCardData = {
   assignee_id: string | null;
   assignee_name: string | null;
   status: string;
+  gender: AppointmentGender;
+  total_cost: number;
   services: { id: string; name: string; duration_minutes: number }[];
 };
 
@@ -43,11 +50,6 @@ export type MutationState = {
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
-
-function toInt(value: unknown, fallback = 0): number {
-  const n = typeof value === "number" ? value : Number(value);
-  return Number.isFinite(n) && n >= 0 ? Math.floor(n) : fallback;
-}
 
 export async function createAppointment(
   _prevState: AppointmentState,
@@ -65,6 +67,7 @@ export async function createAppointment(
   const appointmentDate = String(formData.get("appointmentDate") ?? "").trim();
   const appointmentTime = String(formData.get("appointmentTime") ?? "").trim();
   const assigneeIdRaw = String(formData.get("assigneeId") ?? "").trim();
+  const gender = normalizeGender(formData.get("gender"));
 
   let serviceIds: string[] = [];
   try {
@@ -104,7 +107,9 @@ export async function createAppointment(
   // forged from the client — only rows belonging to this shop count.
   const { data: services, error: servicesError } = await supabase
     .from("services")
-    .select("id, duration_minutes")
+    .select(
+      "id, duration_minutes, cost, gender_specific, male_duration_minutes, male_cost, female_duration_minutes, female_cost",
+    )
     .eq("shop_id", shopId)
     .in("id", serviceIds);
   if (servicesError) return { error: servicesError.message };
@@ -112,9 +117,10 @@ export async function createAppointment(
     return { error: "One or more selected services are invalid." };
   }
   const totalDuration = services.reduce(
-    (sum, s) => sum + toInt(s.duration_minutes, 0),
+    (sum, s) => sum + serviceDurationMinutes(s, gender),
     0,
   );
+  const totalCost = services.reduce((sum, s) => sum + serviceCost(s, gender), 0);
 
   // Validate the assignee (optional): must belong to this shop.
   let assigneeId: string | null = null;
@@ -140,6 +146,8 @@ export async function createAppointment(
       appointment_date: appointmentDate,
       appointment_time: appointmentTime,
       total_duration_minutes: totalDuration,
+      total_cost: totalCost,
+      gender,
       assignee_id: assigneeId,
       status: "upcoming",
     })
@@ -246,6 +254,7 @@ export async function updateAppointment(
   const appointmentDate = String(formData.get("appointmentDate") ?? "").trim();
   const appointmentTime = String(formData.get("appointmentTime") ?? "").trim();
   const assigneeIdRaw = String(formData.get("assigneeId") ?? "").trim();
+  const gender = normalizeGender(formData.get("gender"));
   const serviceIds = readServiceIds(formData);
 
   if (!appointmentId) return { error: "Missing appointment." };
@@ -256,9 +265,25 @@ export async function updateAppointment(
     return { error: "Please select at least one service." };
   }
 
+  // Completed appointments are read-only: reject edits server-side even if a
+  // client bypasses the UI guard.
+  const { data: existing, error: existingError } = await supabase
+    .from("appointments")
+    .select("status")
+    .eq("id", appointmentId)
+    .eq("shop_id", shopId)
+    .maybeSingle();
+  if (existingError) return { error: existingError.message };
+  if (!existing) return { error: "Appointment not found." };
+  if (existing.status === "completed") {
+    return { error: "Completed appointments can no longer be edited." };
+  }
+
   const { data: services, error: servicesError } = await supabase
     .from("services")
-    .select("id, duration_minutes")
+    .select(
+      "id, duration_minutes, cost, gender_specific, male_duration_minutes, male_cost, female_duration_minutes, female_cost",
+    )
     .eq("shop_id", shopId)
     .in("id", serviceIds);
   if (servicesError) return { error: servicesError.message };
@@ -266,9 +291,10 @@ export async function updateAppointment(
     return { error: "One or more selected services are invalid." };
   }
   const totalDuration = services.reduce(
-    (sum, s) => sum + toInt(s.duration_minutes, 0),
+    (sum, s) => sum + serviceDurationMinutes(s, gender),
     0,
   );
+  const totalCost = services.reduce((sum, s) => sum + serviceCost(s, gender), 0);
 
   let assigneeId: string | null = null;
   if (assigneeIdRaw) {
@@ -282,7 +308,7 @@ export async function updateAppointment(
     assigneeId = assignee.id;
   }
 
-  const { error: updateError } = await supabase
+  const { data: updatedRows, error: updateError } = await supabase
     .from("appointments")
     .update({
       customer_name: customerName,
@@ -290,11 +316,23 @@ export async function updateAppointment(
       appointment_date: appointmentDate,
       appointment_time: appointmentTime,
       total_duration_minutes: totalDuration,
+      total_cost: totalCost,
+      gender,
       assignee_id: assigneeId,
     })
     .eq("id", appointmentId)
-    .eq("shop_id", shopId);
+    .eq("shop_id", shopId)
+    .neq("status", "completed")
+    .select("id");
   if (updateError) return { error: updateError.message };
+  // Zero rows means the appointment was completed (or removed) while the
+  // modal was open — bail before rewriting the service links.
+  if (!updatedRows || updatedRows.length === 0) {
+    return {
+      error:
+        "This appointment could not be updated — it may have been completed or deleted.",
+    };
+  }
 
   const { error: deleteLinksError } = await supabase
     .from("appointment_services")

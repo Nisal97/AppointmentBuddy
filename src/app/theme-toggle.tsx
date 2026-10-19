@@ -8,6 +8,7 @@ export function ThemeToggle() {
 
   return (
     <button
+      id="headerThemeToggle"
       type="button"
       role="switch"
       aria-checked={isDark}

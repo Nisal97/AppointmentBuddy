@@ -158,6 +158,7 @@ export function ShopManager({ initialServices, initialAssignees }: ShopManagerPr
     return (
       <button
         key={tab}
+        id={tab === "services" ? "shopServicesTabButton" : "shopAssigneesTabButton"}
         type="button"
         role="tab"
         aria-selected={isActive}
@@ -200,6 +201,7 @@ export function ShopManager({ initialServices, initialAssignees }: ShopManagerPr
               Services
             </h2>
             <button
+              id="shopAddServiceButton"
               type="button"
               disabled={isPending}
               onClick={addService}
@@ -235,6 +237,7 @@ export function ShopManager({ initialServices, initialAssignees }: ShopManagerPr
               Assignees
             </h2>
             <button
+              id="shopAddAssigneeButton"
               type="button"
               disabled={isPending}
               onClick={addAssignee}
@@ -287,7 +290,7 @@ export function ShopManager({ initialServices, initialAssignees }: ShopManagerPr
         </p>
       )}
 
-      <button type="submit" disabled={isPending} className={saveButton}>
+      <button id="shopSaveButton" type="submit" disabled={isPending} className={saveButton}>
         {isPending ? "Saving…" : "Save"}
       </button>
     </form>

@@ -24,15 +24,18 @@ export function Toggle({
   onToggle,
   colorOn,
   label,
+  id,
 }: {
   checked: boolean;
   disabled: boolean;
   onToggle: () => void;
   colorOn: string;
   label: string;
+  id?: string;
 }) {
   return (
     <button
+      id={id}
       type="button"
       role="switch"
       aria-checked={checked}

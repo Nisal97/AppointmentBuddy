@@ -100,6 +100,37 @@ export default function Home({
           </span>
           <span aria-hidden="true" className="text-xl text-zinc-400 transition-transform group-hover:translate-x-1 dark:text-zinc-500">→</span>
         </Link>
+
+        <Link
+          href="/shop"
+          className="group flex w-full items-center gap-4 rounded-2xl border border-indigo-100 bg-white p-5 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:border-indigo-200 hover:shadow-lg hover:shadow-indigo-500/10 active:scale-[0.99] sm:col-span-2 sm:p-6 dark:border-zinc-800 dark:bg-zinc-900 dark:hover:border-zinc-700 dark:hover:shadow-black/40"
+        >
+          <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-purple-500 text-white shadow-md shadow-indigo-500/25 sm:h-14 sm:w-14">
+            <svg
+              className="h-6 w-6 sm:h-7 sm:w-7"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5h1v5h1v-5h1v5"
+              />
+            </svg>
+          </span>
+          <span className="flex-1">
+            <span className="block text-base font-bold text-zinc-900 sm:text-lg dark:text-white">
+              Edit Shop
+            </span>
+            <span className="block text-xs text-zinc-500 sm:text-sm dark:text-zinc-400">
+              Services, pricing &amp; staff
+            </span>
+          </span>
+          <span aria-hidden="true" className="text-xl text-zinc-400 transition-transform group-hover:translate-x-1 dark:text-zinc-500">→</span>
+        </Link>
       </div>
     </div>
   );

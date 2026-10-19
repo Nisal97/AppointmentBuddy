@@ -44,25 +44,6 @@ function ProfileIcon() {
   );
 }
 
-function ShopIcon() {
-  return (
-    <svg
-      className="h-5 w-5"
-      fill="none"
-      stroke="currentColor"
-      viewBox="0 0 24 24"
-      aria-hidden="true"
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        strokeWidth={2}
-        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5h1v5h1v-5h1v5"
-      />
-    </svg>
-  );
-}
-
 function PowerIcon() {
   return (
     <svg
@@ -85,7 +66,6 @@ function PowerIcon() {
 const NAV_ITEMS: { href: string; label: string; icon: ReactNode }[] = [
   { href: "/home", label: "Home", icon: <HomeIcon /> },
   { href: "/profile", label: "Edit Profile", icon: <ProfileIcon /> },
-  { href: "/shop", label: "Edit Shop", icon: <ShopIcon /> },
 ];
 
 const iconButton = (isActive: boolean) =>
@@ -150,6 +130,7 @@ export function AppHeader() {
           <ThemeToggle />
           <form action={logout} className="flex">
             <button
+              id="headerLogoutButton"
               type="submit"
               aria-label="Log out"
               title="Log out"

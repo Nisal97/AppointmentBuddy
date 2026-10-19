@@ -2,10 +2,17 @@ import type {
   AppointmentAssigneeOption,
   AppointmentServiceOption,
 } from "../actions";
+import {
+  formatMoney,
+  serviceCost,
+  serviceDurationMinutes,
+  type AppointmentGender,
+} from "../gender";
 
 type ServiceCheckboxesProps = {
   services: AppointmentServiceOption[];
   selectedIds: string[];
+  gender: AppointmentGender;
   isPending: boolean;
   onToggle: (id: string) => void;
 };
@@ -13,6 +20,7 @@ type ServiceCheckboxesProps = {
 export function ServiceCheckboxes({
   services,
   selectedIds,
+  gender,
   isPending,
   onToggle,
 }: ServiceCheckboxesProps) {
@@ -29,6 +37,7 @@ export function ServiceCheckboxes({
         const checked = selectedIds.includes(service.id);
         return (
           <label
+            id={`newAppointmentServiceLabel-${service.id}`}
             key={service.id}
             className={`flex cursor-pointer items-center gap-3 rounded-xl border px-4 py-3 text-sm transition-all ${
               checked
@@ -47,7 +56,8 @@ export function ServiceCheckboxes({
               {service.name}
             </span>
             <span className="text-xs text-zinc-500 dark:text-zinc-400">
-              {service.duration_minutes} min
+              {serviceDurationMinutes(service, gender)} min ·{" "}
+              {formatMoney(serviceCost(service, gender))}
             </span>
           </label>
         );
@@ -68,6 +78,7 @@ export function AssigneeSelect({ assignees, isPending }: AssigneeSelectProps) {
   return (
     <div>
       <label
+        id="newAppointmentAssigneeLabel"
         htmlFor="assigneeId"
         className="mb-1 block text-xs font-medium text-zinc-600 dark:text-zinc-400"
       >

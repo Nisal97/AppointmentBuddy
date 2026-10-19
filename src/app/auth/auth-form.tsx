@@ -63,11 +63,11 @@ export function AuthForm({ mode, action }: AuthFormProps) {
         <div className="rounded-3xl border border-zinc-200 bg-white p-8 shadow-2xl dark:border-zinc-800 dark:bg-zinc-900">
           <form action={formAction} className="space-y-5" noValidate>
             <div>
-              <label htmlFor="email" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor={`${mode}EmailInput`} id={`${mode}EmailLabel`} className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Email address
               </label>
               <input
-                id="email"
+                id={`${mode}EmailInput`}
                 name="email"
                 type="email"
                 autoComplete="email"
@@ -79,11 +79,11 @@ export function AuthForm({ mode, action }: AuthFormProps) {
             </div>
 
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
+              <label htmlFor={`${mode}PasswordInput`} id={`${mode}PasswordLabel`} className="block text-sm font-medium text-zinc-700 dark:text-zinc-300">
                 Password
               </label>
               <input
-                id="password"
+                id={`${mode}PasswordInput`}
                 name="password"
                 type="password"
                 autoComplete={copy.passwordAutocomplete}
@@ -106,6 +106,7 @@ export function AuthForm({ mode, action }: AuthFormProps) {
             )}
 
             <button
+              id={`${mode}SubmitButton`}
               type="submit"
               disabled={isPending}
               className={buttonBase}
