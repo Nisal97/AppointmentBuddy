@@ -1,11 +1,16 @@
 import type { ReactNode } from "react";
 import { AppHeader } from "../app-header";
 
+// Type definition added to satisfy TypeScript checks
+type LayoutProps = {
+  children: ReactNode;
+};
+
 /**
  * Layout for signed-in pages (/home, /profile, /shop — URLs unchanged).
  * Provides the shared app header with nav, theme toggle, and logout.
  */
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default function AppLayout({ children }: LayoutProps) {
   return (
     <div className="flex min-h-screen flex-col bg-slate-50 text-zinc-900 transition-colors dark:bg-zinc-950 dark:text-zinc-100">
       <AppHeader />
