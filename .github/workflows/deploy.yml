@@ -7,6 +7,26 @@ on:
     branches: [ main ]
 
 jobs:
+  unit-tests:
+    name: Unit Tests (Vitest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install Dependencies
+        run: npm ci
+
+      - name: Run Unit Tests (Vitest)
+        run: npm run test:unit
+
   check-and-build:
     name: Typecheck & Build
     runs-on: ubuntu-latest
@@ -45,7 +65,7 @@ jobs:
 
   deploy:
     name: Deploy to Vercel
-    needs: check-and-build
+    needs: [unit-tests, check-and-build]
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
 
