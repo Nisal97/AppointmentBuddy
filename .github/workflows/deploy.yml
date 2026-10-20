@@ -105,10 +105,27 @@ jobs:
       - name: Checkout Code
         uses: actions/checkout@v4
 
+      - name: Check Vercel secrets presence (no values printed)
+        id: vercel-check
+        run: |
+          if [ -n "${{ secrets.VERCEL_TOKEN }}" ]; then echo "VERCEL_TOKEN: set"; else echo "VERCEL_TOKEN: MISSING"; fi
+          if [ -n "${{ secrets.VERCEL_ORG_ID }}" ]; then echo "VERCEL_ORG_ID: set"; else echo "VERCEL_ORG_ID: MISSING"; fi
+          if [ -n "${{ secrets.VERCEL_PROJECT_ID }}" ]; then echo "VERCEL_PROJECT_ID: set"; else echo "VERCEL_PROJECT_ID: MISSING"; fi
+          if [ -z "${{ secrets.VERCEL_TOKEN }}" ] || [ -z "${{ secrets.VERCEL_ORG_ID }}" ] || [ -z "${{ secrets.VERCEL_PROJECT_ID }}" ]; then
+            echo "ready=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "ready=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Deploy to Vercel Action
+        if: steps.vercel-check.outputs.ready == 'true'
         uses: amondnet/vercel-action@v25
         with:
           vercel-token: ${{ secrets.VERCEL_TOKEN }}
           vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
           vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
           vercel-args: '--prod'
+
+      - name: Skip notice (Vercel secrets missing)
+        if: steps.vercel-check.outputs.ready != 'true'
+        run: echo "::warning::Vercel secrets missing — skipping deploy. Unit tests, typecheck, and build already passed. Add VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID as repository Secrets to enable deploy."
