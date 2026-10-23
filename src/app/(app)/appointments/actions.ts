@@ -3,17 +3,13 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
-import {
-  normalizeGender,
-  serviceCost,
-  serviceDurationMinutes,
-  type AppointmentGender,
-  type GenderedService,
-} from "./gender";
 
-export type AppointmentServiceOption = GenderedService & {
+
+export type AppointmentServiceOption = {
   id: string;
   name: string;
+  duration_minutes: number;
+  cost: number;
 };
 
 export type AppointmentAssigneeOption = {
@@ -38,7 +34,6 @@ export type AppointmentCardData = {
   assignee_id: string | null;
   assignee_name: string | null;
   status: string;
-  gender: AppointmentGender;
   total_cost: number;
   services: { id: string; name: string; duration_minutes: number }[];
 };
@@ -49,7 +44,6 @@ export type MutationState = {
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
-const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 export async function createAppointment(
   _prevState: AppointmentState,
@@ -67,7 +61,6 @@ export async function createAppointment(
   const appointmentDate = String(formData.get("appointmentDate") ?? "").trim();
   const appointmentTime = String(formData.get("appointmentTime") ?? "").trim();
   const assigneeIdRaw = String(formData.get("assigneeId") ?? "").trim();
-  const gender = normalizeGender(formData.get("gender"));
 
   let serviceIds: string[] = [];
   try {
@@ -84,14 +77,6 @@ export async function createAppointment(
   if (!contactNumber) return { error: "Contact number is required." };
   if (!DATE_PATTERN.test(appointmentDate)) {
     return { error: "Please choose a valid appointment date." };
-  }
-  if (!TIME_PATTERN.test(appointmentTime)) {
-    return { error: "Please choose a valid appointment time." };
-  }
-  // Snap to 5-minute intervals: minutes must be a multiple of 5.
-  const minutes = Number(appointmentTime.slice(3, 5));
-  if (!Number.isInteger(minutes) || minutes % 5 !== 0) {
-    return { error: "Please choose a time in 5-minute intervals." };
   }
   if (serviceIds.length === 0) {
     return { error: "Please select at least one service." };
@@ -116,11 +101,8 @@ export async function createAppointment(
   if (!services || services.length !== serviceIds.length) {
     return { error: "One or more selected services are invalid." };
   }
-  const totalDuration = services.reduce(
-    (sum, s) => sum + serviceDurationMinutes(s, gender),
-    0,
-  );
-  const totalCost = services.reduce((sum, s) => sum + serviceCost(s, gender), 0);
+  const totalDuration = services.reduce((sum, s) => sum + s.duration_minutes, 0);
+  const totalCost = services.reduce((sum, s) => sum + s.cost, 0);
 
   // Validate the assignee (optional): must belong to this shop.
   let assigneeId: string | null = null;
@@ -147,7 +129,6 @@ export async function createAppointment(
       appointment_time: appointmentTime,
       total_duration_minutes: totalDuration,
       total_cost: totalCost,
-      gender,
       assignee_id: assigneeId,
       status: "upcoming",
     })
@@ -199,23 +180,6 @@ function readServiceIds(formData: FormData): string[] | null {
   }
 }
 
-function validateDateTime(
-  appointmentDate: string,
-  appointmentTime: string,
-): string | null {
-  if (!DATE_PATTERN.test(appointmentDate)) {
-    return "Please choose a valid appointment date.";
-  }
-  if (!TIME_PATTERN.test(appointmentTime)) {
-    return "Please choose a valid appointment time.";
-  }
-  const minutes = Number(appointmentTime.slice(3, 5));
-  if (!Number.isInteger(minutes) || minutes % 5 !== 0) {
-    return "Please choose a time in 5-minute intervals.";
-  }
-  return null;
-}
-
 /** Marks an upcoming appointment as completed. Bound to the "Done" button. */
 export async function completeAppointment(
   _prevState: MutationState,
@@ -254,13 +218,13 @@ export async function updateAppointment(
   const appointmentDate = String(formData.get("appointmentDate") ?? "").trim();
   const appointmentTime = String(formData.get("appointmentTime") ?? "").trim();
   const assigneeIdRaw = String(formData.get("assigneeId") ?? "").trim();
-  const gender = normalizeGender(formData.get("gender"));
   const serviceIds = readServiceIds(formData);
 
   if (!appointmentId) return { error: "Missing appointment." };
   if (!contactNumber) return { error: "Contact number is required." };
-  const dateTimeError = validateDateTime(appointmentDate, appointmentTime);
-  if (dateTimeError) return { error: dateTimeError };
+  if (!DATE_PATTERN.test(appointmentDate)) {
+    return { error: "Please choose a valid appointment date." };
+  }
   if (!serviceIds || serviceIds.length === 0) {
     return { error: "Please select at least one service." };
   }
@@ -290,11 +254,8 @@ export async function updateAppointment(
   if (!services || services.length !== serviceIds.length) {
     return { error: "One or more selected services are invalid." };
   }
-  const totalDuration = services.reduce(
-    (sum, s) => sum + serviceDurationMinutes(s, gender),
-    0,
-  );
-  const totalCost = services.reduce((sum, s) => sum + serviceCost(s, gender), 0);
+  const totalDuration = services.reduce((sum, s) => sum + s.duration_minutes, 0);
+  const totalCost = services.reduce((sum, s) => sum + s.cost, 0);
 
   let assigneeId: string | null = null;
   if (assigneeIdRaw) {
@@ -317,7 +278,6 @@ export async function updateAppointment(
       appointment_time: appointmentTime,
       total_duration_minutes: totalDuration,
       total_cost: totalCost,
-      gender,
       assignee_id: assigneeId,
     })
     .eq("id", appointmentId)

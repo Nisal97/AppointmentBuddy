@@ -3,13 +3,7 @@ import type {
   AppointmentCardData,
   AppointmentServiceOption,
 } from "./actions";
-import {
-  formatMoney,
-  serviceCost,
-  serviceDurationMinutes,
-  type AppointmentGender,
-} from "./gender";
-import { GenderToggle } from "./gender-toggle";
+import { formatMoney } from "./gender";
 
 const inputBase =
   "block w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-400/30";
@@ -24,8 +18,6 @@ export type ModalBodyShared = {
   selectedIds: string[];
   totalDuration: number;
   totalPrice: number;
-  gender: AppointmentGender;
-  onGenderChange: (gender: AppointmentGender) => void;
   busy: boolean;
   onToggle: (id: string) => void;
 };
@@ -37,8 +29,6 @@ export function EditFields({
   selectedIds,
   totalDuration,
   totalPrice,
-  gender,
-  onGenderChange,
   busy,
   onToggle,
 }: ModalBodyShared) {
@@ -74,12 +64,6 @@ export function EditFields({
           />
         </div>
       </div>
-      <GenderToggle
-        id="editAppointmentGenderToggle"
-        gender={gender}
-        isPending={busy}
-        onGenderChange={onGenderChange}
-      />
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label id="edit-appointmentDateLabel" htmlFor="edit-appointmentDate" className={labelClass}>
@@ -139,8 +123,8 @@ export function EditFields({
                   {service.name}
                 </span>
                 <span className="text-xs text-zinc-500 dark:text-zinc-400">
-                  {serviceDurationMinutes(service, gender)} min ·{" "}
-                  {formatMoney(serviceCost(service, gender))}
+                  {service.duration_minutes} min ·{" "}
+                  {formatMoney(service.cost)}
                 </span>
               </label>
             );

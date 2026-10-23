@@ -107,12 +107,6 @@ export function AppointmentCard({ appointment, onEdit }: AppointmentCardProps) {
             {appointment.assignee_name ?? "No preference"}
           </dd>
         </div>
-        <div>
-          <dt className="text-xs text-zinc-500 dark:text-zinc-400">Gender</dt>
-          <dd className="font-medium text-zinc-900 dark:text-zinc-100">
-            {appointment.gender === "female" ? "Female" : "Male"}
-          </dd>
-        </div>
       </dl>
 
       <div className="mt-3 flex flex-wrap gap-1.5">

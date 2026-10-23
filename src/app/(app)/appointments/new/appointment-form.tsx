@@ -7,13 +7,7 @@ import {
   type AppointmentServiceOption,
   type AppointmentState,
 } from "../actions";
-import {
-  formatMoney,
-  serviceCost,
-  serviceDurationMinutes,
-  type AppointmentGender,
-} from "../gender";
-import { GenderToggle } from "../gender-toggle";
+import { formatMoney } from "../gender";
 import { AssigneeSelect, ServiceCheckboxes } from "./appointment-fields";
 
 const inputBase =
@@ -40,7 +34,6 @@ type AppointmentFormProps = {
 
 export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
-  const [gender, setGender] = useState<AppointmentGender>("male");
   const [state, formAction, isPending] = useActionState<
     AppointmentState,
     FormData
@@ -50,19 +43,16 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
     () =>
       services
         .filter((service) => selectedIds.includes(service.id))
-        .reduce(
-          (sum, service) => sum + serviceDurationMinutes(service, gender),
-          0,
-        ),
-    [services, selectedIds, gender],
+        .reduce((sum, service) => sum + service.duration_minutes, 0),
+    [services, selectedIds],
   );
 
   const totalPrice = useMemo(
     () =>
       services
         .filter((service) => selectedIds.includes(service.id))
-        .reduce((sum, service) => sum + serviceCost(service, gender), 0),
-    [services, selectedIds, gender],
+        .reduce((sum, service) => sum + service.cost, 0),
+    [services, selectedIds],
   );
 
   const toggleService = (id: string) => {
@@ -111,12 +101,6 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
           />
         </div>
       </div>
-      <GenderToggle
-        id="newAppointmentGenderToggle"
-        gender={gender}
-        isPending={isPending}
-        onGenderChange={setGender}
-      />
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label id="newAppointmentDateLabel" htmlFor="appointmentDate" className={labelClass}>
@@ -155,7 +139,6 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
         <ServiceCheckboxes
           services={services}
           selectedIds={selectedIds}
-          gender={gender}
           isPending={isPending}
           onToggle={toggleService}
         />

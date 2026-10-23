@@ -9,12 +9,6 @@ import {
   type AppointmentServiceOption,
   type MutationState,
 } from "./actions";
-import {
-  normalizeGender,
-  serviceCost,
-  serviceDurationMinutes,
-  type AppointmentGender,
-} from "./gender";
 import { DeleteSection } from "./edit-appointment-delete";
 import { EditFields } from "./edit-appointment-fields";
 import { ReadOnlyDetails } from "./edit-appointment-readonly";
@@ -36,9 +30,6 @@ export function EditAppointmentModal({
     appointment.services.map((s) => s.id),
   );
   const [confirmingDelete, setConfirmingDelete] = useState(false);
-  const [gender, setGender] = useState<AppointmentGender>(
-    normalizeGender(appointment.gender),
-  );
   const [updateState, updateAction, isUpdating] = useActionState<
     MutationState,
     FormData
@@ -69,19 +60,16 @@ export function EditAppointmentModal({
     () =>
       services
         .filter((service) => selectedIds.includes(service.id))
-        .reduce(
-          (sum, service) => sum + serviceDurationMinutes(service, gender),
-          0,
-        ),
-    [services, selectedIds, gender],
+        .reduce((sum, service) => sum + service.duration_minutes, 0),
+    [services, selectedIds],
   );
 
   const totalPrice = useMemo(
     () =>
       services
         .filter((service) => selectedIds.includes(service.id))
-        .reduce((sum, service) => sum + serviceCost(service, gender), 0),
-    [services, selectedIds, gender],
+        .reduce((sum, service) => sum + service.cost, 0),
+    [services, selectedIds],
   );
 
   const toggleService = (id: string) => {
@@ -136,8 +124,6 @@ export function EditAppointmentModal({
           selectedIds={selectedIds}
           totalDuration={totalDuration}
           totalPrice={totalPrice}
-          gender={gender}
-          onGenderChange={setGender}
           busy={busy}
           isCompleted={isCompleted}
           isUpdating={isUpdating}
@@ -163,8 +149,6 @@ function ModalBody({
   selectedIds,
   totalDuration,
   totalPrice,
-  gender,
-  onGenderChange,
   busy,
   isCompleted,
   isUpdating,
@@ -184,8 +168,6 @@ function ModalBody({
   selectedIds: string[];
   totalDuration: number;
   totalPrice: number;
-  gender: AppointmentGender;
-  onGenderChange: (gender: AppointmentGender) => void;
   busy: boolean;
   isCompleted: boolean;
   isUpdating: boolean;
@@ -212,8 +194,6 @@ function ModalBody({
             selectedIds={selectedIds}
             totalDuration={totalDuration}
             totalPrice={totalPrice}
-            gender={gender}
-            onGenderChange={onGenderChange}
             busy={busy}
             onToggle={onToggle}
           />

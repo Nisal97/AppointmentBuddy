@@ -17,10 +17,6 @@ export function ReadOnlyDetails({ appointment }: ReadOnlyDetailsProps) {
       value: appointment.customer_name || "Walk-in customer",
     },
     { label: "Contact", value: appointment.contact_number || "—" },
-    {
-      label: "Gender",
-      value: appointment.gender === "female" ? "Female" : "Male",
-    },
     { label: "Date", value: formatDate(appointment.appointment_date) },
     {
       label: "Time",

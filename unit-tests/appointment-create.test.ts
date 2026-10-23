@@ -59,18 +59,6 @@ describe("createAppointment", () => {
     expect(result.error).toBe("Please choose a valid appointment date.");
   });
 
-  it("returns error when appointment time is invalid", async () => {
-    mockedGetUser.mockResolvedValue({ data: { user: { id: "shop-1" } }, error: null });
-    const result = await createAppointment({} as AppointmentState, buildFormData({ ...baseValidFields, appointmentTime: "25:99" }));
-    expect(result.error).toBe("Please choose a valid appointment time.");
-  });
-
-  it("returns error when time is not on a 5-minute interval", async () => {
-    mockedGetUser.mockResolvedValue({ data: { user: { id: "shop-1" } }, error: null });
-    const result = await createAppointment({} as AppointmentState, buildFormData({ ...baseValidFields, appointmentTime: "10:03" }));
-    expect(result.error).toBe("Please choose a time in 5-minute intervals.");
-  });
-
   it("returns error when no services are selected", async () => {
     mockedGetUser.mockResolvedValue({ data: { user: { id: "shop-1" } }, error: null });
     const result = await createAppointment({} as AppointmentState, buildFormData({ ...baseValidFields, serviceIds: JSON.stringify([]) }));
@@ -176,7 +164,7 @@ describe("createAppointment", () => {
       return buildMockChain({});
     });
     await expect(
-      createAppointment({} as AppointmentState, buildFormData({ ...baseValidFields, gender: "male" })),
+      createAppointment({} as AppointmentState, buildFormData({ ...baseValidFields })),
     ).resolves.toEqual({ error: "link failed" });
     expect(deleteCalled).toBe(true);
   });

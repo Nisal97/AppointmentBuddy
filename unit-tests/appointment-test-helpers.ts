@@ -69,7 +69,6 @@ export const baseValidFields = {
   appointmentTime: "10:00",
   serviceIds: JSON.stringify(["svc-1"]),
   assigneeId: "",
-  gender: "female",
 };
 
 export const VALID_SERVICE = {
