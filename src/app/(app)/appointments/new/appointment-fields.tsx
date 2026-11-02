@@ -61,13 +61,20 @@ export function ServiceCheckboxes({
 
 type AssigneeSelectProps = {
   assignees: AppointmentAssigneeOption[];
+  value: string;
+  onChange: (id: string) => void;
   isPending: boolean;
 };
 
 const selectBase =
   "block w-full rounded-xl border border-zinc-200 bg-white px-4 py-3 text-sm text-zinc-900 shadow-sm outline-none transition-all focus:border-indigo-500 focus:ring-2 focus:ring-indigo-500/20 disabled:opacity-60 dark:border-zinc-800 dark:bg-zinc-900 dark:text-zinc-100 dark:focus:ring-indigo-400/30";
 
-export function AssigneeSelect({ assignees, isPending }: AssigneeSelectProps) {
+export function AssigneeSelect({
+  assignees,
+  value,
+  onChange,
+  isPending,
+}: AssigneeSelectProps) {
   return (
     <div>
       <label
@@ -81,7 +88,8 @@ export function AssigneeSelect({ assignees, isPending }: AssigneeSelectProps) {
       <select
         id="assigneeId"
         name="assigneeId"
-        defaultValue=""
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
         disabled={isPending}
         className={selectBase}
       >

@@ -66,6 +66,38 @@ describe("updateAppointment (ongoing)", () => {
     expect(result.error).toBe("Appointment not found.");
   });
 
+  it("returns error when the new time conflicts with another appointment", async () => {
+    mockedGetUser.mockResolvedValue({ data: { user: { id: "shop-1" } }, error: null });
+    let callCount = 0;
+    mockedFrom.mockImplementation(() => {
+      callCount++;
+      if (callCount === 1)
+        return buildMockChain({ singleData: { id: "appt-1", status: "upcoming" } });
+      if (callCount === 2) return buildMockChain({ data: [VALID_SERVICE] });
+      if (callCount === 3)
+        return buildMockChain({ singleData: { id: "staff-1", name: "Sam" } });
+      if (callCount === 4)
+        return buildMockChain({
+          data: [
+            {
+              id: "appt-2",
+              customer_name: "Jane Doe",
+              appointment_time: "10:15",
+              total_duration_minutes: 30,
+              assignee_id: "staff-1",
+            },
+          ],
+          error: null,
+        });
+      return buildMockChain({ error: null });
+    });
+    const result = await updateAppointment(
+      {} as MutationState,
+      buildFormData({ ...editFields, appointmentTime: "10:00", assigneeId: "staff-1" }),
+    );
+    expect(result.error).toContain("conflicts with the 10:15 AM appointment for Jane Doe");
+  });
+
   it("returns error when appointment is already completed", async () => {
     mockedGetUser.mockResolvedValue({ data: { user: { id: "shop-1" } }, error: null });
     let callCount = 0;

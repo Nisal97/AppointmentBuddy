@@ -1,12 +1,15 @@
 "use client";
 
-import { useActionState, useMemo, useState } from "react";
+import { useActionState, useEffect, useMemo, useRef, useState } from "react";
 import {
+  checkAppointmentConflict,
   createAppointment,
   type AppointmentAssigneeOption,
   type AppointmentServiceOption,
   type AppointmentState,
+  type ConflictCheckResult,
 } from "../actions";
+import { formatTime } from "../format";
 import { formatMoney } from "../gender";
 import { AssigneeSelect, ServiceCheckboxes } from "./appointment-fields";
 
@@ -55,6 +58,30 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
     [services, selectedIds],
   );
 
+  const [appointmentDate, setAppointmentDate] = useState(todayLocal());
+  const [appointmentTime, setAppointmentTime] = useState("");
+  const [selectedAssigneeId, setSelectedAssigneeId] = useState("");
+  const [availableStaffChoice, setAvailableStaffChoice] = useState("");
+
+  const [conflictState, setConflictState] = useState<ConflictCheckResult>({
+    conflict: false,
+    conflictWith: null,
+    availableAssignees: [],
+  });
+  // Guards against stale responses when the user changes inputs faster than
+  // the server check resolves.
+  const checkSequence = useRef(0);
+
+  const inputsComplete = Boolean(
+    appointmentDate && appointmentTime && selectedAssigneeId && totalDuration > 0,
+  );
+  // When the inputs aren't checkable (e.g. no assignee picked) there can be no
+  // conflict, so surface a fresh empty result instead of a stale warning.
+  const activeConflict = inputsComplete
+    ? conflictState
+    : { conflict: false, conflictWith: null, availableAssignees: [] };
+  const hasConflict = activeConflict.conflict && !!activeConflict.conflictWith;
+
   const toggleService = (id: string) => {
     setSelectedIds((prev) =>
       prev.includes(id) ? prev.filter((s) => s !== id) : [...prev, id],
@@ -65,6 +92,29 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
     formData.set("serviceIds", JSON.stringify(selectedIds));
     formAction(formData);
   };
+
+  useEffect(() => {
+    let cancelled = false;
+    if (!appointmentDate || !appointmentTime || !selectedAssigneeId) return;
+    if (totalDuration <= 0) return;
+
+    const sequence = ++checkSequence.current;
+    const formData = new FormData();
+    formData.set("appointmentDate", appointmentDate);
+    formData.set("appointmentTime", appointmentTime);
+    formData.set("assigneeId", selectedAssigneeId);
+    formData.set("durationMinutes", String(totalDuration));
+
+    checkAppointmentConflict(null, formData).then((result) => {
+      if (cancelled || sequence !== checkSequence.current) return;
+      setConflictState(result);
+      setAvailableStaffChoice("");
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [appointmentDate, appointmentTime, selectedAssigneeId, totalDuration]);
 
   return (
     <form action={submitWithPayload} noValidate className="space-y-5">
@@ -111,9 +161,10 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
             name="appointmentDate"
             type="date"
             required
-            defaultValue={todayLocal()}
+            value={appointmentDate}
             min={todayLocal()}
             disabled={isPending}
+            onChange={(event) => setAppointmentDate(event.target.value)}
             className={inputBase}
           />
         </div>
@@ -127,7 +178,9 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
             type="time"
             required
             step={300}
+            value={appointmentTime}
             disabled={isPending}
+            onChange={(event) => setAppointmentTime(event.target.value)}
             className={inputBase}
           />
         </div>
@@ -165,7 +218,74 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
           </span>
         </div>
       </div>
-      <AssigneeSelect assignees={assignees} isPending={isPending} />
+      <AssigneeSelect
+        assignees={assignees}
+        value={selectedAssigneeId}
+        onChange={setSelectedAssigneeId}
+        isPending={isPending}
+      />
+      {hasConflict && (
+        <div
+          role="alert"
+          aria-live="polite"
+          className="space-y-1.5 rounded-xl border border-amber-100 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-500/20 dark:bg-amber-900/10 dark:text-amber-300"
+        >
+          <span className="font-medium text-amber-900 dark:text-amber-200">
+            Scheduling conflict
+          </span>
+          <p>
+            Conflicts with the{" "}
+            <span className="font-medium">
+              {formatTime(conflictState.conflictWith!.appointment_time)}
+            </span>{" "}
+            appointment for{" "}
+            <span className="font-medium">
+              {conflictState.conflictWith!.customer_name}
+            </span>
+            .
+          </p>
+          {conflictState.availableAssignees.length > 0 ? (
+            <div className="mt-2 space-y-2">
+              <label className="mb-1 block text-xs font-medium text-amber-700 dark:text-amber-400">
+                Find available staff
+              </label>
+              <select
+                value={availableStaffChoice}
+                onChange={(event) => setAvailableStaffChoice(event.target.value)}
+                disabled={isPending}
+                className={inputBase}
+              >
+                <option value="">Choose a staff member</option>
+                {conflictState.availableAssignees.map((assignee) => (
+                  <option key={assignee.id} value={assignee.id}>
+                    {assignee.name}
+                  </option>
+                ))}
+              </select>
+              <button
+                type="button"
+                disabled={!availableStaffChoice || isPending}
+                onClick={() => {
+                  setSelectedAssigneeId(availableStaffChoice);
+                  setAvailableStaffChoice("");
+                }}
+                className="rounded-xl border border-indigo-200 bg-white px-3 py-1.5 text-xs font-semibold text-indigo-700 shadow-sm transition-all hover:bg-indigo-50 disabled:opacity-60 disabled:cursor-not-allowed dark:border-zinc-800/30 dark:bg-zinc-900 dark:text-indigo-300 dark:hover:bg-indigo-500/10"
+              >
+                Assign to{" "}
+                {assignees.find((assignee) => assignee.id === availableStaffChoice)
+                  ?.name}
+              </button>
+              <p className="text-xs text-amber-600 dark:text-amber-400">
+                Switching clears the conflict before you submit.
+              </p>
+            </div>
+          ) : (
+            <p className="text-amber-600 dark:text-amber-400">
+              No other staff are free during this time.
+            </p>
+          )}
+        </div>
+      )}
       {state.error && (
         <p
           role="alert"
@@ -174,8 +294,13 @@ export function AppointmentForm({ services, assignees }: AppointmentFormProps) {
           {state.error}
         </p>
       )}
-      <button id="newAppointmentCreateButton" type="submit" disabled={isPending} className={saveButton}>
-        {isPending ? "Creating…" : "Create appointment"}
+      <button
+        id="newAppointmentCreateButton"
+        type="submit"
+        disabled={isPending || hasConflict}
+        className={saveButton}
+      >
+        {hasConflict ? "Resolve the conflict above" : isPending ? "Creating…" : "Create appointment"}
       </button>
     </form>
   );

@@ -4,6 +4,9 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { createClient } from "@/utils/supabase/server";
 
+import { formatTime } from "./format";
+import { getAvailableStaff } from "@/lib/conflict";
+
 
 export type AppointmentServiceOption = {
   id: string;
@@ -44,6 +47,73 @@ export type MutationState = {
 };
 
 const DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+const TIME_PATTERN = /^([01]\d|2[0-3]):[0-5]\d$/;
+
+export type AppointmentConflict = {
+  id: string;
+  customer_name: string;
+  appointment_time: string;
+  total_duration_minutes: number;
+};
+
+export type ConflictCheckResult = {
+  conflict: boolean;
+  conflictWith: AppointmentConflict | null;
+  /** Staff members with no overlapping appointment on the date during [newStart, newEnd]. */
+  availableAssignees: AppointmentAssigneeOption[];
+};
+
+const EMPTY_CONFLICT_RESULT: ConflictCheckResult = {
+  conflict: false,
+  conflictWith: null,
+  availableAssignees: [],
+};
+
+type AppointmentRow = {
+  id: string;
+  customer_name: string;
+  appointment_time: string;
+  total_duration_minutes: number;
+  assignee_id: string;
+};
+
+function timeToMinutes(hhmm: string): number {
+  const [h, m] = hhmm.split(":").map(Number);
+  return (Number.isFinite(h) ? h : 0) * 60 + (Number.isFinite(m) ? m : 0);
+}
+
+/** Proposed range [newStart, newEnd) vs existing range [bStart, bEnd). */
+function rangesOverlap(
+  newStart: number,
+  newEnd: number,
+  bStart: number,
+  bEnd: number,
+): boolean {
+  return newStart < bEnd && newEnd > bStart;
+}
+
+/**
+ * Finds the first existing appointment overlapping the proposed range for the
+ * given assignee. Rows already filtered to the shop/date can be passed in.
+ */
+function findConflictingAppointment(
+  rows: AppointmentRow[],
+  newStart: number,
+  newEnd: number,
+  assigneeId: string,
+  excludeAppointmentId: string | null,
+): AppointmentRow | null {
+  return (
+    rows.find((row) => {
+      if (row.assignee_id !== assigneeId || row.id === excludeAppointmentId) {
+        return false;
+      }
+      const existingStart = timeToMinutes(row.appointment_time);
+      const existingEnd = existingStart + (row.total_duration_minutes ?? 0);
+      return rangesOverlap(newStart, newEnd, existingStart, existingEnd);
+    }) ?? null
+  );
+}
 
 export async function createAppointment(
   _prevState: AppointmentState,
@@ -117,6 +187,33 @@ export async function createAppointment(
       return { error: "Selected assignee is invalid." };
     }
     assigneeId = assignee.id;
+  }
+
+  // Reject the create if the selected staff member already has an
+  // overlapping appointment on that date (server-side backstop for the UI).
+  if (assigneeId) {
+    const { data: existingRows } = await supabase
+      .from("appointments")
+      .select(
+        "id, customer_name, appointment_time, total_duration_minutes, assignee_id",
+      )
+      .eq("shop_id", shopId)
+      .eq("appointment_date", appointmentDate)
+      .neq("status", "completed");
+    const conflict = findConflictingAppointment(
+      (existingRows ?? []) as AppointmentRow[],
+      timeToMinutes(appointmentTime),
+      timeToMinutes(appointmentTime) + totalDuration,
+      assigneeId,
+      null,
+    );
+    if (conflict) {
+      return {
+        error: `This time slot conflicts with the ${formatTime(
+          conflict.appointment_time,
+        )} appointment for ${conflict.customer_name}.`,
+      };
+    }
   }
 
   const { data: appointment, error: insertError } = await supabase
@@ -269,6 +366,33 @@ export async function updateAppointment(
     assigneeId = assignee.id;
   }
 
+  // Reject the move if it would overlap another appointment on that date.
+  // The appointment being edited is excluded so rescheduling stays valid.
+  if (assigneeId) {
+    const { data: existingRows } = await supabase
+      .from("appointments")
+      .select(
+        "id, customer_name, appointment_time, total_duration_minutes, assignee_id",
+      )
+      .eq("shop_id", shopId)
+      .eq("appointment_date", appointmentDate)
+      .neq("status", "completed");
+    const conflict = findConflictingAppointment(
+      (existingRows ?? []) as AppointmentRow[],
+      timeToMinutes(appointmentTime),
+      timeToMinutes(appointmentTime) + totalDuration,
+      assigneeId,
+      appointmentId,
+    );
+    if (conflict) {
+      return {
+        error: `This time slot conflicts with the ${formatTime(
+          conflict.appointment_time,
+        )} appointment for ${conflict.customer_name}.`,
+      };
+    }
+  }
+
   const { data: updatedRows, error: updateError } = await supabase
     .from("appointments")
     .update({
@@ -313,6 +437,85 @@ export async function updateAppointment(
   revalidatePath("/appointments");
   revalidatePath("/home", "layout");
   return { message: "Appointment updated." };
+}
+
+/**
+ * Checks whether the proposed [newStart, newStart + duration) range clashes
+ * with an existing appointment for the selected staff member, and lists the
+ * staff members who are free during that window. Called reactively from the
+ * new-appointment form as the user picks a date, time, and assignee.
+ */
+export async function checkAppointmentConflict(
+  _prevState: ConflictCheckResult | null,
+  formData: FormData,
+): Promise<ConflictCheckResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return EMPTY_CONFLICT_RESULT;
+  const shopId = user.id;
+
+  const appointmentDate = String(formData.get("appointmentDate") ?? "").trim();
+  const appointmentTime = String(formData.get("appointmentTime") ?? "").trim();
+  const assigneeId = String(formData.get("assigneeId") ?? "").trim();
+  const excludeAppointmentId =
+    String(formData.get("excludeAppointmentId") ?? "").trim() || null;
+  const durationMinutes = Number(formData.get("durationMinutes"));
+
+  if (!DATE_PATTERN.test(appointmentDate)) return EMPTY_CONFLICT_RESULT;
+  if (!TIME_PATTERN.test(appointmentTime)) return EMPTY_CONFLICT_RESULT;
+  if (!Number.isFinite(durationMinutes) || durationMinutes <= 0)
+    return EMPTY_CONFLICT_RESULT;
+  // No staff member selected: there is nothing to conflict with.
+  if (!assigneeId) return EMPTY_CONFLICT_RESULT;
+
+  const newStart = timeToMinutes(appointmentTime);
+  const newEnd = newStart + durationMinutes;
+
+  const { data: existingRows } = await supabase
+    .from("appointments")
+    .select(
+      "id, customer_name, appointment_time, total_duration_minutes, assignee_id",
+    )
+    .eq("shop_id", shopId)
+    .eq("appointment_date", appointmentDate)
+    .neq("status", "completed");
+
+  const conflictWith = findConflictingAppointment(
+    (existingRows ?? []) as AppointmentRow[],
+    newStart,
+    newEnd,
+    assigneeId,
+    excludeAppointmentId,
+  );
+
+  const { data: assignees } = await supabase
+    .from("assignees")
+    .select("id, name, available_today")
+    .eq("shop_id", shopId)
+    .order("created_at", { ascending: true });
+
+  // Exclude the appointment being edited (if any) so rescheduling to the same
+  // slot is allowed, then keep only staff with zero overlapping appointments.
+  const rows = ((existingRows ?? []) as AppointmentRow[]).filter(
+    (row) => row.id !== excludeAppointmentId,
+  );
+  const staff = ((assignees ?? []) as AppointmentAssigneeOption[]).filter(
+    (assignee) => assignee.id !== excludeAppointmentId,
+  );
+  const availableAssignees = getAvailableStaff(
+    staff,
+    newStart,
+    durationMinutes,
+    rows,
+  );
+
+  return {
+    conflict: conflictWith !== null,
+    conflictWith,
+    availableAssignees,
+  };
 }
 
 /** Deletes an appointment (junction rows cascade). Bound to the modal delete. */

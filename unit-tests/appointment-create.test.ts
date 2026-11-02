@@ -125,6 +125,35 @@ describe("createAppointment", () => {
     expect(result.error).toBe("insert failed");
   });
 
+  it("returns error when the selected assignee has an overlapping appointment", async () => {
+    mockedGetUser.mockResolvedValue({ data: { user: { id: "shop-1" } }, error: null });
+    mockedFrom.mockImplementation((table: string) => {
+      if (table === "profiles") return buildMockChain({ error: null });
+      if (table === "services") return buildMockChain({ data: [VALID_SERVICE] });
+      if (table === "assignees")
+        return buildMockChain({ singleData: { id: "staff-1", name: "Sam" } });
+      if (table === "appointments")
+        return buildMockChain({
+          data: [
+            {
+              id: "appt-1",
+              customer_name: "Jane Doe",
+              appointment_time: "10:15",
+              total_duration_minutes: 30,
+              assignee_id: "staff-1",
+            },
+          ],
+          error: null,
+        });
+      return buildMockChain({ error: null });
+    });
+    const result = await createAppointment(
+      {} as AppointmentState,
+      buildFormData({ ...baseValidFields, appointmentTime: "10:00", assigneeId: "staff-1" }),
+    );
+    expect(result.error).toContain("conflicts with the 10:15 AM appointment for Jane Doe");
+  });
+
   it("redirects to /home?created=1 on success", async () => {
     mockedGetUser.mockResolvedValue({ data: { user: { id: "shop-1" } }, error: null });
     mockedFrom.mockImplementation((table: string) => {

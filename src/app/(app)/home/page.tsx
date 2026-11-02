@@ -1,32 +1,13 @@
 import Link from "next/link";
 import { Suspense } from "react";
 
-async function CreatedBanner({
-  searchParams,
-}: {
-  searchParams?: Promise<{ created?: string }>;
-}) {
-  const params = await searchParams;
-  if (params?.created !== "1") return null;
-  return (
-    <p
-      role="status"
-      className="mb-6 w-full rounded-lg border border-emerald-100 bg-emerald-50 px-4 py-3 text-center text-sm text-emerald-700 dark:border-emerald-800 dark:bg-emerald-900/20 dark:text-emerald-300"
-    >
-      Appointment created successfully.
-    </p>
-  );
-}
+import { CreatedBanner } from "./created-banner";
 
-export default function Home({
-  searchParams,
-}: {
-  searchParams?: Promise<{ created?: string }>;
-}) {
+export default function Home() {
   return (
     <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col items-center px-4 py-12">
       <Suspense fallback={null}>
-        <CreatedBanner searchParams={searchParams} />
+        <CreatedBanner />
       </Suspense>
 
       <div className="mb-8 text-center">
